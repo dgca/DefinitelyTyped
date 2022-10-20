@@ -614,6 +614,21 @@ declare namespace jest {
 
     type SnapshotSerializerPlugin = import('pretty-format').Plugin;
 
+    class AsymmetricMatcherId<T> {
+        private _type: T;
+    }
+    type AsymmetricMatcherStringReturn = AsymmetricMatcherId<string>;
+    type AsymmetricMatcherArrayReturn<E = unknown> = AsymmetricMatcherId<E[]>;
+    type AsymmetricMatcherObjectReturn<E = Record<string, unknown>> = AsymmetricMatcherId<E>;
+
+    type AsymmetricObjectContaining<E = {}> = {
+        [K in keyof E]:
+            | E[K]
+            | (Extract<E[K], string> extends never ? never : AsymmetricMatcherStringReturn)
+            | (Extract<E[K], unknown[]> extends unknown[] ? never : AsymmetricMatcherArrayReturn)
+            | (Extract<E[K], Record<string, unknown>> extends never ? never : AsymmetricMatcherObjectReturn);
+    };
+
     interface InverseAsymmetricMatchers {
         /**
          * `expect.not.arrayContaining(array)` matches a received array which
@@ -624,7 +639,7 @@ declare namespace jest {
          * Optionally, you can provide a type for the elements via a generic.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        arrayContaining<E = any>(arr: E[]): any;
+        arrayContaining<E = any>(arr: E[]): AsymmetricMatcherArrayReturn<E>;
         /**
          * `expect.not.objectContaining(object)` matches any received object
          * that does not recursively match the expected properties. That is, the
@@ -636,19 +651,19 @@ declare namespace jest {
          * This ensures that the object contains the desired structure.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        objectContaining<E = {}>(obj: E): any;
+        objectContaining<E = {}>(obj: AsymmetricObjectContaining<E>): AsymmetricMatcherObjectReturn<E>;
         /**
          * `expect.not.stringMatching(string | regexp)` matches the received
          * string that does not match the expected regexp. It is the inverse of
          * `expect.stringMatching`.
          */
-        stringMatching(str: string | RegExp): any;
+        stringMatching(str: string | RegExp): AsymmetricMatcherStringReturn;
         /**
          * `expect.not.stringContaining(string)` matches the received string
          * that does not contain the exact expected string. It is the inverse of
          * `expect.stringContaining`.
          */
-        stringContaining(str: string): any;
+        stringContaining(str: string): AsymmetricMatcherStringReturn;
     }
     type MatcherState = import('expect').MatcherState;
     /**
@@ -702,7 +717,7 @@ declare namespace jest {
          * Optionally, you can provide a type for the elements via a generic.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        arrayContaining<E = any>(arr: E[]): any;
+        arrayContaining<E = any>(arr: E[]): AsymmetricMatcherArrayReturn<E>;
         /**
          * Verifies that a certain number of assertions are called during a test.
          * This is often useful when testing asynchronous code, in order to
@@ -739,15 +754,15 @@ declare namespace jest {
          * This ensures that the object contains the desired structure.
          */
         // tslint:disable-next-line: no-unnecessary-generics
-        objectContaining<E = {}>(obj: E): any;
+        objectContaining<E = {}>(obj: AsymmetricObjectContaining<E>): AsymmetricMatcherObjectReturn<E>;
         /**
          * Matches any string that contains the exact provided string
          */
-        stringMatching(str: string | RegExp): any;
+        stringMatching(str: string | RegExp): AsymmetricMatcherStringReturn;
         /**
          * Matches any received string that contains the exact expected string
          */
-        stringContaining(str: string): any;
+        stringContaining(str: string): AsymmetricMatcherStringReturn;
 
         not: InverseAsymmetricMatchers;
 
